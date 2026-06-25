@@ -1,0 +1,3 @@
+# Weighted Ensemble Configuration
+lgbm_weight: 0.55
+xgb_weight: 0.45

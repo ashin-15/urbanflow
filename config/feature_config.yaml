@@ -1,0 +1,39 @@
+# Feature Configuration for Traffic Demand Prediction
+
+target: "traffic_demand"
+
+datetime_col: "timestamp"
+
+raw_numeric_features:
+  - "number_of_lanes"
+  - "traffic_signals"
+  - "large_vehicles_count"
+  - "temperature"
+  - "humidity"
+  - "rainfall"
+  - "wind_speed"
+  - "event_indicator"
+
+raw_categorical_features:
+  - "location"
+  - "geohash_location"
+  - "weather_condition"
+  - "road_type"
+  - "nearby_landmarks"
+
+engineered_numeric_features:
+  - "nearby_landmarks_count"
+  - "traffic_density_score"
+  - "weather_impact_score"
+  - "rush_hour_indicator"
+  - "hour_sin"
+  - "hour_cos"
+  - "lane_signal_interaction"
+  - "landmark_event_interaction"
+  - "is_weekend"
+  - "day_of_week"
+  - "month"
+  - "hour"
+
+engineered_categorical_features:
+  - "hour_flag"
