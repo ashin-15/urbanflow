@@ -82,25 +82,8 @@ def train_and_tune(data_path="data/raw/smart_city_traffic_data.csv", fast_mode=T
     if fast_mode:
         rf_model = RandomForestRegressor(n_estimators=50, max_depth=10, random_state=42, n_jobs=-1)
     else:
-        # Tuning Random Forest
-        rf_param_grid = {
-            'n_estimators': [100, 200],
-            'max_depth': [10, 20, None],
-            'min_samples_split': [2, 5],
-            'min_samples_leaf': [1, 2]
-        }
-        rf_search = RandomizedSearchCV(
-            RandomForestRegressor(random_state=42, n_jobs=-1),
-            param_distributions=rf_param_grid,
-            n_iter=5,
-            cv=3,
-            scoring='r2',
-            random_state=42,
-            n_jobs=-1
-        )
-        rf_search.fit(X_train, y_train)
-        rf_model = rf_search.best_estimator_
-        logger.info(f"Best RF Params: {rf_search.best_params_}")
+        # Use recommended tuned parameters
+        rf_model = RandomForestRegressor(n_estimators=500, max_depth=20, min_samples_split=5, random_state=42, n_jobs=-1)
         
     rf_model.fit(X_train, y_train)
     joblib.dump(rf_model, "models/rf_model.pkl")
@@ -111,25 +94,17 @@ def train_and_tune(data_path="data/raw/smart_city_traffic_data.csv", fast_mode=T
     if fast_mode:
         xgb_model = XGBRegressor(n_estimators=100, max_depth=6, learning_rate=0.1, random_state=42, n_jobs=-1)
     else:
-        xgb_param_grid = {
-            'n_estimators': [300, 500],
-            'learning_rate': [0.03, 0.1],
-            'max_depth': [4, 6, 8],
-            'subsample': [0.8, 1.0],
-            'colsample_bytree': [0.8, 1.0]
-        }
-        xgb_search = RandomizedSearchCV(
-            XGBRegressor(random_state=42, n_jobs=-1),
-            param_distributions=xgb_param_grid,
-            n_iter=5,
-            cv=3,
-            scoring='r2',
+        # Use recommended tuned parameters
+        xgb_model = XGBRegressor(
+            n_estimators=700,
+            learning_rate=0.05,
+            max_depth=6,
+            subsample=0.80,
+            colsample_bytree=0.85,
+            reg_alpha=0.1,
             random_state=42,
             n_jobs=-1
         )
-        xgb_search.fit(X_train, y_train)
-        xgb_model = xgb_search.best_estimator_
-        logger.info(f"Best XGB Params: {xgb_search.best_params_}")
         
     xgb_model.fit(X_train, y_train)
     joblib.dump(xgb_model, "models/xgb_model.pkl")
@@ -137,31 +112,21 @@ def train_and_tune(data_path="data/raw/smart_city_traffic_data.csv", fast_mode=T
     
     # --- 4.3 LightGBM Regressor ---
     logger.info("Training LightGBM Regressor...")
-    # Configure LightGBM to be quiet
     if fast_mode:
         lgbm_model = LGBMRegressor(n_estimators=100, max_depth=6, learning_rate=0.1, random_state=42, n_jobs=-1, verbose=-1)
     else:
-        lgbm_param_grid = {
-            'n_estimators': [300, 500],
-            'learning_rate': [0.03, 0.1],
-            'num_leaves': [31, 63],
-            'max_depth': [-1, 6, 12],
-            'subsample': [0.8, 1.0],
-            'colsample_bytree': [0.8, 1.0]
-        }
-        lgbm_search = RandomizedSearchCV(
-            LGBMRegressor(random_state=42, n_jobs=-1, verbose=-1),
-            param_distributions=lgbm_param_grid,
-            n_iter=5,
-            cv=3,
-            scoring='r2',
+        # Use recommended tuned parameters
+        lgbm_model = LGBMRegressor(
+            n_estimators=800,
+            learning_rate=0.03,
+            num_leaves=127,
+            subsample=0.85,
+            colsample_bytree=0.85,
+            reg_alpha=0.1,
             random_state=42,
-            n_jobs=-1
+            n_jobs=-1,
+            verbose=-1
         )
-        lgbm_search.fit(X_train, y_train)
-        lgbm_model = lgbm_search.best_estimator_
-        logger.info(f"Best LGBM Params: {lgbm_search.best_params_}")
-        
     lgbm_model.fit(X_train, y_train)
     joblib.dump(lgbm_model, "models/lgbm_model.pkl")
     logger.info("LightGBM Regressor trained and saved.")
@@ -171,7 +136,34 @@ def train_and_tune(data_path="data/raw/smart_city_traffic_data.csv", fast_mode=T
     xgb_val_r2 = xgb_model.score(X_val, y_val)
     lgbm_val_r2 = lgbm_model.score(X_val, y_val)
     
-    logger.info(f"Validation R2 Scores - RF: {rf_val_r2:.4f}, XGB: {xgb_val_r2:.4f}, LGBM: {lgbm_val_r2:.4f}")
+    logger.info(f"Validation R2 Scores (before retraining) - RF: {rf_val_r2:.4f}, XGB: {xgb_val_r2:.4f}, LGBM: {lgbm_val_r2:.4f}")
+    
+    # Combined retraining to maximize training size and accuracy
+    logger.info("Combining Train and Validation sets for final retraining...")
+    combined_train_val_df = pd.concat([train_df, val_df], axis=0).reset_index(drop=True)
+    y_train_val = combined_train_val_df[target]
+    
+    # Refit FeatureEngineer on combined set to prevent target encoding leakage on test set
+    fe.fit(combined_train_val_df)
+    fe.save("models/feature_engineer.pkl")
+    
+    # Re-transform combined set and test features
+    X_train_val_full = fe.transform(combined_train_val_df)
+    X_train_val = X_train_val_full[features]
+    
+    logger.info("Retraining final Random Forest on combined set...")
+    rf_model.fit(X_train_val, y_train_val)
+    joblib.dump(rf_model, "models/rf_model.pkl")
+    
+    logger.info("Retraining final XGBoost on combined set...")
+    xgb_model.fit(X_train_val, y_train_val)
+    joblib.dump(xgb_model, "models/xgb_model.pkl")
+    
+    logger.info("Retraining final LightGBM on combined set...")
+    lgbm_model.fit(X_train_val, y_train_val)
+    joblib.dump(lgbm_model, "models/lgbm_model.pkl")
+    
+    logger.info("Final retrained models and feature engineer saved successfully.")
     
     # 6. Save Model Registry Metadata
     registry = {
