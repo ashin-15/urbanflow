@@ -16,6 +16,8 @@ def sample_train_df():
         "weather_condition": ["Clear", "Rainy", "Foggy"],
         "rainfall": [0.0, 10.0, 5.0],
         "humidity": [50.0, 90.0, 75.0],
+        "wind_speed": [5.0, 10.0, 15.0],
+        "temperature": [25.0, 30.0, 35.0],
         "event_indicator": [0, 0, 1],
         "nearby_landmarks": ["Warehouse, Port", "School, Park", "University, Hospital, Park"],
         "traffic_demand": [1000, 2000, 3000]
@@ -48,6 +50,18 @@ def test_feature_engineer_fit_transform(sample_train_df):
     assert "geohash_location_encoded" in transformed.columns
     assert "road_type_encoded" in transformed.columns
     
+    # New advanced features
+    assert "month_sin" in transformed.columns
+    assert "month_cos" in transformed.columns
+    assert "day_sin" in transformed.columns
+    assert "day_cos" in transformed.columns
+    assert "temp_wind_interaction" in transformed.columns
+    assert "rainfall_humidity_interaction" in transformed.columns
+    assert "vehicle_lane_ratio" in transformed.columns
+    assert "rush_weekend_interaction" in transformed.columns
+    assert "hour_location_encoded" in transformed.columns
+    assert "dow_road_encoded" in transformed.columns
+    
     # Check specific calculations
     # Landmark count
     assert transformed["nearby_landmarks_count"].iloc[0] == 2
@@ -73,6 +87,10 @@ def test_feature_engineer_fit_transform(sample_train_df):
 
 def test_feature_list_validity():
     features = get_model_features_list()
-    assert len(features) > 15
+    assert len(features) > 25  # Updated for new features
     assert "geohash_location_encoded" in features
     assert "weather_impact_score" in features
+    assert "month_sin" in features
+    assert "hour_location_encoded" in features
+    assert "dow_road_encoded" in features
+    assert "vehicle_lane_ratio" in features

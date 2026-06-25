@@ -6,18 +6,43 @@ This report presents the final evaluation metrics of the Traffic Demand Predicti
 
 | Model | R² Score | RMSE (veh/hr) | MAE (veh/hr) | MAPE (%) | Pass Status (R² ≥ 0.96) |
 |---|---|---|---|---|---|
-| Random Forest | -0.3168 | 1476.00 | 1299.25 | 69.23% | Fail |
-| XGBoost | -0.2951 | 1463.79 | 1220.74 | 61.16% | Fail |
-| LightGBM | -0.3418 | 1489.96 | 1249.13 | 63.76% | Fail |
-| **Weighted Ensemble** | **-0.2737** | **1451.61** | **1220.45** | **61.87%** | **Fail** |
+| Random Forest | 0.9582 | 298.84 | 188.11 | 10.86% | ❌ Fail |
+| XGBoost | 0.9590 | 296.14 | 186.75 | 10.82% | ❌ Fail |
+| LightGBM | 0.9592 | 295.44 | 187.14 | 10.90% | ❌ Fail |
+| **Weighted Ensemble** | **0.9593** | **295.04** | **186.50** | **10.83%** | **❌ Fail** |
+
+> Ensemble weights: RF: 10%, XGB: 20%, LGBM: 70%
 
 ## 2. Key Findings & Discussion
 
-1. **Ensemble Improvement:** The Weighted Ensemble (55% LightGBM + 45% XGBoost) achieved an R² score of **-0.2737**, exceeding the target pass threshold of **0.96**. It successfully reduced both RMSE and MAE compared to the individual models, confirming the variance-reduction benefits of ensembling.
-2. **Gradient Boosting vs. Bagging:** XGBoost (R²: -0.2951) and LightGBM (R²: -0.3418) significantly outperformed the Random Forest baseline (R²: -0.3168). This demonstrates that gradient-boosted decision trees are highly effective for modeling the complex, nonlinear traffic demand dynamics of this smart city dataset.
-3. **Temporal Validity:** Because the dataset was split chronologically rather than randomly, these metrics represent true generalization performance. The model is highly robust to future dates without suffering from lookahead bias or data leakage.
+1. **Ensemble Performance:** The Weighted Ensemble achieved an R² score of **0.9593** on the held-out test set.
+2. **Gradient Boosting vs. Bagging:** XGBoost (R²: 0.9590) and LightGBM (R²: 0.9592) vs Random Forest (R²: 0.9582).
+3. **Temporal Validity:** The dataset was split chronologically, so these metrics represent true generalization to future timepoints.
 
-## 3. Visualizations
+## 3. Per-Segment Analysis
+
+### By Time Period (Hour Flag)
+
+| Time Period | Count | Mean Actual | Mean Predicted | Mean Error | R² |
+|---|---|---|---|---|---|
+| Early Morning | 4500 | 576 | 579 | -3 | 0.9131 |
+| Morning Rush | 3000 | 3001 | 2996 | 5 | 0.9312 |
+| Midday | 3750 | 1932 | 1934 | -3 | 0.9163 |
+| Evening Rush | 3750 | 2698 | 2707 | -9 | 0.9355 |
+| Night | 3000 | 1262 | 1266 | -5 | 0.9561 |
+
+### By Road Type
+
+| Road Type | Count | Mean Actual | Mean Predicted | Mean Error | R² |
+|---|---|---|---|---|---|
+| Collector | 3572 | 1810 | 1815 | -5 | 0.9494 |
+| Local Street | 3684 | 1087 | 1093 | -6 | 0.9508 |
+| Residential Street | 3594 | 1788 | 1786 | 2 | 0.9533 |
+| Highway | 3577 | 2656 | 2664 | -8 | 0.9575 |
+| Arterial | 3573 | 1775 | 1774 | 2 | 0.9533 |
+
+
+## 4. Visualizations
 
 Actual vs. Predicted scatter plot for the ensemble model:
 

@@ -28,8 +28,16 @@ engineered_numeric_features:
   - "rush_hour_indicator"
   - "hour_sin"
   - "hour_cos"
+  - "month_sin"
+  - "month_cos"
+  - "day_sin"
+  - "day_cos"
   - "lane_signal_interaction"
   - "landmark_event_interaction"
+  - "temp_wind_interaction"
+  - "rainfall_humidity_interaction"
+  - "vehicle_lane_ratio"
+  - "rush_weekend_interaction"
   - "is_weekend"
   - "day_of_week"
   - "month"
@@ -37,3 +45,10 @@ engineered_numeric_features:
 
 engineered_categorical_features:
   - "hour_flag"
+
+target_encoded_features:
+  - "geohash_location_encoded"
+  - "road_type_encoded"
+  - "location_encoded"
+  - "hour_location_encoded"
+  - "dow_road_encoded"
