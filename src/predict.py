@@ -31,6 +31,79 @@ class TrafficPredictor:
         else:
             return "HIGH", "🔴 Red", 66.6 + min(100.0, ((demand - 3000) / 5000.0)) * 33.3
 
+    def _calculate_accident_risk(self, input_dict, pred_demand, congestion_level):
+        """Calculates a heuristic accident risk score (0-100%) and risk level."""
+        base_risk = 5.0
+        
+        # Weather impact
+        weather = input_dict.get("weather_condition", "Clear")
+        if weather in ["Rainy", "Snowy"]:
+            base_risk += 15.0
+        elif weather in ["Foggy", "Thunderstorm", "Stormy"]:
+            base_risk += 25.0
+            
+        # Congestion impact
+        if congestion_level == "MEDIUM":
+            base_risk += 10.0
+        elif congestion_level == "HIGH":
+            base_risk += 25.0
+            
+        # Event/Landmark impact
+        if input_dict.get("event_indicator", 0) == 1:
+            base_risk += 10.0
+            
+        # Vehicle ratio impact
+        lanes = max(1, input_dict.get("number_of_lanes", 1))
+        large_vehicles = input_dict.get("large_vehicles_count", 0)
+        ratio = large_vehicles / lanes
+        if ratio > 15:
+            base_risk += 10.0
+            
+        risk_score = min(98.0, base_risk + np.random.uniform(-2, 2))  # add slight noise
+        
+        if risk_score < 30:
+            level = "Low"
+        elif risk_score < 60:
+            level = "Moderate"
+        else:
+            level = "High"
+            
+        return int(round(risk_score)), level
+
+    def _get_route_recommendations(self, input_dict):
+        """Generates alternative route recommendations by holding time/location constant."""
+        current_road = input_dict.get("road_type")
+        all_road_types = ["Highway", "Arterial", "Collector", "Local Street", "Residential Street"]
+        alternatives = [rt for rt in all_road_types if rt != current_road]
+        
+        features = get_model_features_list()
+        recommendations = []
+        
+        for alt_road in alternatives:
+            alt_input = input_dict.copy()
+            alt_input["road_type"] = alt_road
+            # Slightly alter lanes/signals based on road type to simulate reality
+            if alt_road == "Highway":
+                alt_input["number_of_lanes"] = max(3, alt_input["number_of_lanes"])
+                alt_input["traffic_signals"] = 0
+            elif alt_road == "Local Street" or alt_road == "Residential Street":
+                alt_input["number_of_lanes"] = min(2, alt_input["number_of_lanes"])
+                alt_input["traffic_signals"] = 1
+                
+            df_alt = pd.DataFrame([alt_input])
+            df_alt_trans = self.fe.transform(df_alt)
+            X_alt = df_alt_trans[features]
+            alt_pred = max(0.0, self.ensemble.predict(X_alt)[0])
+            
+            recommendations.append({
+                "road_type": alt_road,
+                "predicted_demand": int(round(alt_pred))
+            })
+            
+        # Sort by lowest demand
+        recommendations = sorted(recommendations, key=lambda x: x["predicted_demand"])
+        return recommendations[:2]  # Return top 2 alternatives
+
     def predict_single(self, input_dict):
         """Predicts traffic demand, congestion level, and returns lookahead warnings for a single input."""
         df_single = pd.DataFrame([input_dict])
@@ -90,6 +163,12 @@ class TrafficPredictor:
             else:
                 alert_msg = f"⚠️ Alert: Heavy congestion expected over hours {', '.join(map(str, high_hours))}:00."
         
+        # 4. Calculate Accident Risk
+        risk_score, risk_level = self._calculate_accident_risk(input_dict, pred_demand, congestion_level)
+        
+        # 5. Route Recommendations
+        alternative_routes = self._get_route_recommendations(input_dict)
+        
         return {
             "predicted_demand": int(round(pred_demand)),
             "congestion_level": congestion_level,
@@ -99,7 +178,10 @@ class TrafficPredictor:
             "alert_message": alert_msg,
             "forecast_2h": [
                 {"hour": hr, "prediction": int(round(pred))} for hr, pred in lookahead_preds
-            ]
+            ],
+            "accident_risk_score": risk_score,
+            "accident_risk_level": risk_level,
+            "alternative_routes": alternative_routes
         }
 
 def predict(input_dict, models_dir="models", config_path="config/ensemble_config.yaml"):

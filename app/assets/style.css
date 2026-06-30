@@ -138,3 +138,52 @@ section[data-testid="stSidebar"] {
     transform: translateY(-1px) !important;
     box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4) !important;
 }
+
+/* Accident Risk Indicator */
+.risk-low {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+    border-left: 4px solid #2ecc71;
+}
+
+.risk-moderate {
+    background-color: rgba(241, 196, 15, 0.1);
+    color: #f1c40f;
+    border-left: 4px solid #f1c40f;
+}
+
+.risk-high {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+    border-left: 4px solid #e74c3c;
+    animation: flash 1.5s infinite;
+}
+
+@keyframes flash {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+/* Alternative Route Item */
+.route-item {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.route-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+.route-type {
+    font-weight: 600;
+    color: #b3c5d6;
+}
+.route-demand {
+    font-weight: 700;
+    color: #2ecc71;
+}
