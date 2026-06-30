@@ -12,11 +12,10 @@ wheels/
 # Data, models, and logs
 data/raw/
 data/processed/
-models/
 logs/
 
 # Testing and coverage
 .pytest_cache/
 .coverage
 htmlcov/
-
+.agents
