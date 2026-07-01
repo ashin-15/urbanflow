@@ -9,9 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-# Data, models, and logs
-data/raw/
-data/processed/
+# Logs
 logs/
 
 # Testing and coverage
