@@ -78,6 +78,9 @@ def clean_data(df, config):
     time_col = config["datetime_col"]
     geo_col = "geohash_location"
     
+    if time_col in df_clean.columns:
+        df_clean[time_col] = pd.to_datetime(df_clean[time_col])
+    
     initial_rows = len(df_clean)
     df_clean = df_clean.drop_duplicates(subset=[time_col, geo_col], keep="first")
     removed_duplicates = initial_rows - len(df_clean)
