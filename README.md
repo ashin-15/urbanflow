@@ -24,6 +24,7 @@ urbanflow/
 │
 ├── config/                  # Feature and ensemble configurations
 ├── models/                  # Saved .pkl models, encoders, and registry
+├── notebooks/               # Modular Jupyter notebooks (EDA, Training, SHAP)
 ├── reports/                 # Output evaluation metrics and plots
 ├── tests/                   # Pytest suite
 └── pyproject.toml           # Project metadata and dependencies
@@ -44,7 +45,7 @@ source .venv/bin/activate
 **Install dependencies:**
 The necessary packages are listed in `pyproject.toml`. You can install them using `pip`:
 ```bash
-pip install pandas numpy scikit-learn xgboost lightgbm joblib streamlit plotly pyyaml pytest pytest-cov matplotlib seaborn optuna
+pip install pandas numpy scikit-learn xgboost lightgbm joblib streamlit plotly pyyaml pytest pytest-cov matplotlib seaborn optuna shap
 ```
 
 *Note: Ensure your raw dataset (`smart_city_traffic_data.csv`) is placed in the `data/raw/` directory before proceeding.*
@@ -107,6 +108,17 @@ PYTHONPATH=. python -m pytest tests/ -v
 ```bash
 PYTHONPATH=. python -m pytest tests/ --cov=src --cov-report=term-missing
 ```
+
+---
+
+## 6. Jupyter Notebooks
+
+The project provides a modular, end-to-end Jupyter Notebook workflow for exploration and explainability. Note that you will need the `shap` package installed to run the explainability notebook (`uv pip install shap` or `pip install shap`).
+
+- `01_exploratory_data_analysis.ipynb`: Data loading, quality checks, and extensive visual EDA.
+- `02_feature_engineering.ipynb`: Feature engineering pipeline, interaction features, and chronological data splitting.
+- `03_model_training_and_tuning.ipynb`: Training Random Forest, XGBoost, LightGBM, and tuning ensemble weights.
+- `04_model_evaluation_and_explainability.ipynb`: Test set evaluation, residual analysis, and SHAP-based feature importance.
 
 ---
 
